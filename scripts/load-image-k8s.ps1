@@ -15,8 +15,15 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-docker image inspect $Image *> $null
-if ($LASTEXITCODE -ne 0) {
+$previousErrorAction = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+try {
+  docker image inspect $Image *> $null
+  $imageExists = $LASTEXITCODE -eq 0
+} finally {
+  $ErrorActionPreference = $previousErrorAction
+}
+if (-not $imageExists) {
   throw "Image '$Image' not found locally. Build it first: docker build -t $Image ."
 }
 
@@ -29,12 +36,18 @@ $candidates = @(
 ) + @('desktop-control-plane', 'k8s-control-plane', 'kind-control-plane')
 
 $node = $null
-foreach ($candidate in ($candidates | Select-Object -Unique)) {
-  docker inspect $candidate *> $null
-  if ($LASTEXITCODE -eq 0) {
-    $node = $candidate
-    break
+$previousErrorAction = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+try {
+  foreach ($candidate in ($candidates | Select-Object -Unique)) {
+    docker inspect $candidate *> $null
+    if ($LASTEXITCODE -eq 0) {
+      $node = $candidate
+      break
+    }
   }
+} finally {
+  $ErrorActionPreference = $previousErrorAction
 }
 
 if (-not $node) {

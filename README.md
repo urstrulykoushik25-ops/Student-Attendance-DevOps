@@ -14,7 +14,8 @@ SQLite database. It manages an entire class on a single attendance sheet, seven 
 - **Student management** — add, edit, search and delete students; roll numbers are unique
   (case-insensitive) and duplicates are rejected with a clear error.
 - **Daily attendance** — mark present/absent per period, save the whole sheet in one request,
-  reload it later, and correct it at any time.
+  reload it later, and correct it at any time. **Mark All Present** and **Mark All Absent**
+  fill all seven periods for every student in one click before saving.
 - **Duplicate protection** — a database `UNIQUE (student_id, attendance_date, period)` constraint
   plus request validation prevents duplicate rows. Saving again updates the existing record.
 - **Monthly analytics** — working days, working periods, attended periods, absent periods,
@@ -288,6 +289,26 @@ is deterministic in CI (it restarts the Node process and verifies the SQLite fil
 - **[docs/DEVOPS_GUIDE.md](docs/DEVOPS_GUIDE.md)** — step-by-step installation of Docker Desktop,
   Jenkins, Kubernetes; running the stack; pipeline details; Selenium grid; troubleshooting;
   security hardening.
+
+## Validation results
+
+Validated end to end on Windows 11 with Docker Desktop 4.97.0 and Kubernetes 1.36.1
+(October 28, 2026):
+
+| Check | Result |
+| --- | --- |
+| Docker Compose stack | `attendance-app` and `attendance-jenkins` both healthy |
+| API suite | 13/13 tests passed |
+| Selenium UI suite | 9/9 tests passed against standalone Chrome |
+| Jenkins pipeline | build #3 `SUCCESS` (checkout, API, image build, Selenium, Kubernetes) |
+| Kubernetes rollout | `student-attendance:3`, pod `1/1 Running` |
+| In-cluster Service smoke test | `{"status":"ok","service":"student-attendance","database":"ok"}` |
+| PVC | `attendance-data` `Bound`, 1 Gi |
+| Data persistence | test student survived pod replacement; test record removed afterward |
+| Local Kubernetes access | `http://localhost:30080` via `scripts/port-forward-k8s.ps1` |
+
+Docker Desktop's kind-based cluster does not publish NodePorts to Windows, so the port-forward is
+the supported local access path. The manifest still uses a NodePort for clusters that expose it.
 
 ## Security notes
 

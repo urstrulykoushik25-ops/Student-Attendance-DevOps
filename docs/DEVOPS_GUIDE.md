@@ -403,7 +403,8 @@ kubectl get nodes
 Expected: one node named `desktop-control-plane` (or similar) with status `Ready`.
 
 > The project's manifests are plain Kubernetes YAML and work with any cluster (Docker Desktop,
-> kind, minikube, k3d, AKS/EKS/GKE). The NodePort `30080` assumes a local cluster.
+> kind, minikube, k3d, AKS/EKS/GKE). The NodePort `30080` assumes a local cluster; Docker Desktop
+> users should use the port-forward helper described in section 6.4.
 
 ### 6.2 Build the application image
 
@@ -775,18 +776,21 @@ The demo is intentionally easy to run. For anything beyond a local lab:
 
 ## 12. Verification checklist
 
-- [ ] `docker version` and `docker compose version` work.
-- [ ] `docker compose up -d --build` starts `attendance-app` and `attendance-jenkins`.
-- [ ] <http://localhost:3000> loads; `/api/health` returns `status: ok`.
-- [ ] `docker compose ps` shows both containers healthy.
-- [ ] <http://localhost:8080> loads; `admin` / `admin123` works.
-- [ ] `student-attendance-pipeline` exists and a build succeeds.
-- [ ] Jenkins console shows 13 API tests and 9 Selenium tests passing.
-- [ ] `kubectl get nodes` shows a Ready node.
-- [ ] `.\scripts\deploy-k8s.ps1` completes and <http://localhost:30080> loads.
-- [ ] `kubectl -n student-attendance get pvc` shows `Bound`.
-- [ ] Restarting the pod keeps attendance data.
-- [ ] `.\scripts\smoke-test.ps1` passes against the chosen URL.
+The checklist below was completed successfully in the validation run on October 28, 2026
+(Docker Desktop 4.97.0, Kubernetes 1.36.1). Re-run it to verify your own environment.
+
+- [x] `docker version` and `docker compose version` work.
+- [x] `docker compose up -d --build` starts `attendance-app` and `attendance-jenkins`.
+- [x] <http://localhost:3000> loads; `/api/health` returns `status: ok`.
+- [x] `docker compose ps` shows both containers healthy.
+- [x] <http://localhost:8080> loads; `admin` / `admin123` works.
+- [x] `student-attendance-pipeline` exists and a build succeeds.
+- [x] Jenkins console shows 13 API tests and 9 Selenium tests passing.
+- [x] `kubectl get nodes` shows a Ready node.
+- [x] `.\scripts\deploy-k8s.ps1` completes and <http://localhost:30080> loads via port-forward.
+- [x] `kubectl -n student-attendance get pvc` shows `Bound`.
+- [x] Restarting the pod keeps attendance data.
+- [x] `.\scripts\smoke-test.ps1` passes against the chosen URL.
 
 ---
 
