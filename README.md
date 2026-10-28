@@ -26,8 +26,8 @@ SQLite database. It manages an entire class on a single attendance sheet, seven 
 - **Dashboard** — today's attendance, period-by-period pulse, monthly average, low-attendance
   watchlist and recent days.
 - **Responsive UI** — no CDN or external frontend dependency; works offline inside the container.
-- **Automated tests** — 13 API tests and 9 Selenium UI tests, plus a persistence-after-restart test
-  that covers the tenth documented end-to-end case.
+- **Automated tests** — 13 API tests (including the persistence-after-restart case for the tenth
+  documented end-to-end scenario) and 9 Selenium UI tests.
 - **CI/CD** — Jenkins pipeline builds the test image, runs API tests, builds the production image,
   runs Selenium against a real Chrome grid, and optionally deploys to Kubernetes.
 - **Kubernetes** — namespace, ConfigMap, PVC, Deployment with probes and a NodePort Service.
