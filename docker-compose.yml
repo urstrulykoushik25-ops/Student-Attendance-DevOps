@@ -35,7 +35,10 @@ services:
       - "8080:8080"
       - "50000:50000"
     environment:
-      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false -Duser.timezone=Asia/Kolkata"
+      JAVA_OPTS: >-
+        -Djenkins.install.runSetupWizard=false
+        -Duser.timezone=Asia/Kolkata
+        -Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true
       JENKINS_OPTS: "--httpPort=8080"
       CASC_JENKINS_CONFIG: "/usr/share/jenkins/ref/casc/jenkins.yaml"
       KUBECONFIG: "/var/jenkins_home/.kube/config"

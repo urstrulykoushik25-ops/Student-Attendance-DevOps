@@ -18,10 +18,15 @@ $BaseUrl = $BaseUrl.TrimEnd('/')
 $pair = "${User}:${Password}"
 $auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($pair))
 $headers = @{ Authorization = "Basic $auth" }
+# Jenkins binds CSRF crumbs to the HTTP session. Keep the cookies from the
+# crumb request and send them with the build trigger, otherwise Jenkins
+# answers 403 "No valid crumb was included in the request".
+$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
 
 function Invoke-JenkinsApi {
   param([string]$Path, [string]$Method = 'GET')
-  Invoke-RestMethod -Uri "$BaseUrl$Path" -Method $Method -Headers $headers -TimeoutSec 30
+  Invoke-RestMethod -Uri "$BaseUrl$Path" -Method $Method -Headers $headers `
+    -WebSession $session -TimeoutSec 30
 }
 
 Write-Host "Connecting to Jenkins at $BaseUrl ..." -ForegroundColor Cyan

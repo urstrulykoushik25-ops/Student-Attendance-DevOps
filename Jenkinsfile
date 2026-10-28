@@ -125,6 +125,28 @@ pipeline {
       steps {
         sh '''
           set -eu
+
+          # Docker Desktop's built-in Kubernetes is kind-based. Its containerd
+          # image store is separate from the host Docker image store, so a
+          # freshly built image is not automatically visible to the pod.
+          # When the control-plane container is visible, import the build tag.
+          K8S_NODE=$(docker ps --format '{{.Names}} {{.Image}}' \
+            | grep -E 'desktop-control-plane|k8s-control-plane|kind-control-plane|kindest/node' \
+            | head -n 1 | awk '{print $1}' || true)
+
+          if [ -n "$K8S_NODE" ]; then
+            echo "Importing $APP_IMAGE:$BUILD_NUMBER into $K8S_NODE"
+            docker save "$APP_IMAGE:$BUILD_NUMBER" -o /tmp/attendance-image.tar
+            docker cp /tmp/attendance-image.tar "$K8S_NODE:/tmp/attendance-image.tar"
+            docker exec "$K8S_NODE" ctr -n k8s.io images import /tmp/attendance-image.tar
+            docker exec "$K8S_NODE" ctr -n k8s.io images tag \
+              "docker.io/library/$APP_IMAGE:$BUILD_NUMBER" \
+              "docker.io/library/$APP_IMAGE:latest" >/dev/null 2>&1 || true
+            rm -f /tmp/attendance-image.tar
+          else
+            echo "No local kind control-plane container found; assuming the image is reachable from the cluster."
+          fi
+
           kubectl apply -k k8s/
           kubectl -n student-attendance set image deployment/attendance-app \
             attendance-app="$APP_IMAGE:$BUILD_NUMBER"
