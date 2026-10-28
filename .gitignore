@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Runtime data
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Local configuration
+.env
+.env.*
+!.env.example
+.kube/
+*.kubeconfig
+
+# Test and build output
+coverage/
+test-results/
+dist/
+build/
+*.log
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Generated screenshots (keep docs screenshots only)
+docs/screenshots/*.tmp.png

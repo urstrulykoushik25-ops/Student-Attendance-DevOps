@@ -1,0 +1,15 @@
+# syntax=docker/dockerfile:1
+
+# Test image used by Jenkins for API and Selenium suites.
+FROM node:24-bookworm-slim
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci && npm cache clean --force
+
+COPY src ./src
+COPY tests ./tests
+
+ENV NODE_ENV=test
+CMD ["npm", "run", "test:api"]

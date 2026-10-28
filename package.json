@@ -1,0 +1,25 @@
+{
+  "name": "student-attendance-devops",
+  "version": "1.0.0",
+  "description": "Student Attendance Management System with a complete DevOps pipeline (Docker, Jenkins, Kubernetes, Selenium).",
+  "main": "src/server.js",
+  "private": true,
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/seed.js",
+    "test": "npm run test:api && npm run test:selenium",
+    "test:api": "node --test --test-concurrency=1 tests/api.test.js",
+    "test:selenium": "node --test --test-concurrency=1 tests/selenium.test.js",
+    "test:all": "node --test --test-concurrency=1 tests/api.test.js tests/selenium.test.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "selenium-webdriver": "^4.35.0"
+  }
+}

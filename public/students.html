@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Add, edit and manage the student roster in AttendX.">
+  <title>Students · AttendX</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="/" aria-label="AttendX home">
+        <span class="brand-mark">A</span>
+        <span class="brand-text"><strong>AttendX</strong><small>Attendance Suite</small></span>
+      </a>
+
+      <div class="nav-section-label">Workspace</div>
+      <nav class="nav" aria-label="Main navigation">
+        <a class="nav-link" href="/" data-nav="dashboard">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#dashboard"></use></svg>
+          Dashboard
+        </a>
+        <a class="nav-link" href="/students.html" data-nav="students">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#users"></use></svg>
+          Students
+        </a>
+        <a class="nav-link" href="/attendance.html" data-nav="attendance">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#clipboard-check"></use></svg>
+          Daily attendance
+        </a>
+        <a class="nav-link" href="/reports.html" data-nav="reports">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#chart"></use></svg>
+          Reports
+        </a>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+
+      <div class="sidebar-card">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        <div>
+          <strong>DevOps pipeline</strong>
+          <small>Jenkins · Docker · Kubernetes<br>Selenium end-to-end tests</small>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <span>Student Attendance v1.0</span>
+        <span>CI/CD</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Open navigation">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#menu"></use></svg>
+        </button>
+        <div class="topbar-title">
+          <h1>Students</h1>
+          <p>Manage the class roster used by the attendance sheet.</p>
+        </div>
+        <div class="topbar-actions">
+          <span class="date-chip" id="todayChip"></span>
+          <div class="avatar" title="Faculty account">FA</div>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="page-head">
+          <div>
+            <h2>Class roster</h2>
+            <p>Add students once and reuse the same list for every attendance sheet and report.</p>
+          </div>
+          <button class="btn btn-primary" id="addStudentBtn" type="button" data-testid="add-student">
+            <svg class="icon" aria-hidden="true"><use href="/icons.svg#plus"></use></svg>
+            Add student
+          </button>
+        </div>
+
+        <div class="toolbar">
+          <div class="search-box">
+            <svg class="icon" aria-hidden="true"><use href="/icons.svg#search"></use></svg>
+            <input type="search" id="studentSearch" placeholder="Search by name, roll number or department…" autocomplete="off" data-testid="student-search" aria-label="Search students">
+          </div>
+          <span class="toolbar-meta" id="studentCount">Loading roster…</span>
+        </div>
+
+        <section class="card students-card">
+          <div class="table-wrap">
+            <table class="table" id="studentsTable" data-testid="students-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Roll number</th>
+                  <th>Department</th>
+                  <th>Added</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="studentsBody">
+                <tr><td colspan="5" class="table-empty"><span class="spinner" style="display:inline-block;vertical-align:middle;margin-right:8px"></span>Loading students…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add / edit student modal -->
+  <div class="modal-backdrop" id="studentModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="studentModalTitle">
+      <header class="modal-header">
+        <div>
+          <h3 id="studentModalTitle">Add student</h3>
+          <p>Roll numbers are unique and can be corrected later.</p>
+        </div>
+        <button class="icon-btn" type="button" data-close-modal aria-label="Close dialog">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#close"></use></svg>
+        </button>
+      </header>
+
+      <form id="studentForm" novalidate>
+        <div class="modal-body">
+          <input type="hidden" id="studentId">
+          <div class="form-grid">
+            <div class="field">
+              <label for="studentRoll">Roll number</label>
+              <input type="text" id="studentRoll" maxlength="30" placeholder="e.g. 23CSE001" autocomplete="off" data-testid="student-roll">
+            </div>
+            <div class="field">
+              <label for="studentDepartment">Department</label>
+              <input type="text" id="studentDepartment" maxlength="80" list="departmentOptions" placeholder="e.g. Computer Science" autocomplete="off" data-testid="student-department">
+              <datalist id="departmentOptions">
+                <option value="Computer Science"></option>
+                <option value="Information Technology"></option>
+                <option value="AI & Machine Learning"></option>
+                <option value="Electronics & Communication"></option>
+                <option value="Mechanical Engineering"></option>
+                <option value="Civil Engineering"></option>
+              </datalist>
+            </div>
+            <div class="field span-2">
+              <label for="studentName">Full name</label>
+              <input type="text" id="studentName" maxlength="100" placeholder="e.g. Aarav Sharma" autocomplete="off" data-testid="student-name">
+            </div>
+          </div>
+          <p class="form-error" id="studentFormError" hidden>
+            <svg class="icon" aria-hidden="true"><use href="/icons.svg#alert-triangle"></use></svg>
+            <span id="studentFormErrorText"></span>
+          </p>
+        </div>
+        <footer class="modal-footer">
+          <button class="btn btn-secondary" type="button" data-close-modal>Cancel</button>
+          <button class="btn btn-primary" type="submit" id="saveStudentBtn" data-testid="save-student">
+            <svg class="icon" aria-hidden="true"><use href="/icons.svg#save"></use></svg>
+            Save student
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete confirmation -->
+  <div class="modal-backdrop" id="deleteModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+      <header class="modal-header">
+        <div>
+          <h3 id="deleteModalTitle">Remove student?</h3>
+          <p>This also removes every attendance record for this student.</p>
+        </div>
+        <button class="icon-btn" type="button" data-close-modal aria-label="Close dialog">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#close"></use></svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <span class="confirm-icon"><svg class="icon" aria-hidden="true"><use href="/icons.svg#trash"></use></svg></span>
+        <p class="small muted" id="deleteStudentText">Are you sure you want to remove this student?</p>
+      </div>
+      <footer class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-close-modal>Keep student</button>
+        <button class="btn btn-danger" type="button" id="confirmDeleteBtn">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#trash"></use></svg>
+          Remove
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+  <script src="/js/common.js"></script>
+  <script src="/js/students.js"></script>
+</body>
+</html>

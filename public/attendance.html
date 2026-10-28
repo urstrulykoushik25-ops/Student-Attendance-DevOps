@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Mark present or absent for an entire class across seven daily periods.">
+  <title>Daily attendance · AttendX</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="/" aria-label="AttendX home">
+        <span class="brand-mark">A</span>
+        <span class="brand-text"><strong>AttendX</strong><small>Attendance Suite</small></span>
+      </a>
+
+      <div class="nav-section-label">Workspace</div>
+      <nav class="nav" aria-label="Main navigation">
+        <a class="nav-link" href="/" data-nav="dashboard">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#dashboard"></use></svg>
+          Dashboard
+        </a>
+        <a class="nav-link" href="/students.html" data-nav="students">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#users"></use></svg>
+          Students
+        </a>
+        <a class="nav-link" href="/attendance.html" data-nav="attendance">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#clipboard-check"></use></svg>
+          Daily attendance
+        </a>
+        <a class="nav-link" href="/reports.html" data-nav="reports">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#chart"></use></svg>
+          Reports
+        </a>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+
+      <div class="sidebar-card">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        <div>
+          <strong>DevOps pipeline</strong>
+          <small>Jenkins · Docker · Kubernetes<br>Selenium end-to-end tests</small>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <span>Student Attendance v1.0</span>
+        <span>CI/CD</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Open navigation">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#menu"></use></svg>
+        </button>
+        <div class="topbar-title">
+          <h1>Daily attendance</h1>
+          <p>One class, seven periods, a single save.</p>
+        </div>
+        <div class="topbar-actions">
+          <span class="date-chip" id="todayChip"></span>
+          <div class="avatar" title="Faculty account">FA</div>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="page-head">
+          <div>
+            <h2>Attendance sheet</h2>
+            <p>Tap a period to cycle Present → Absent. Existing records load automatically.</p>
+          </div>
+          <div class="page-actions">
+            <div class="date-nav">
+              <button class="icon-btn" id="prevDate" type="button" aria-label="Previous day">
+                <svg class="icon" aria-hidden="true"><use href="/icons.svg#chevron-left"></use></svg>
+              </button>
+              <input type="date" id="attendanceDate" data-testid="attendance-date" aria-label="Attendance date">
+              <button class="icon-btn" id="nextDate" type="button" aria-label="Next day">
+                <svg class="icon" aria-hidden="true"><use href="/icons.svg#chevron-right"></use></svg>
+              </button>
+              <button class="btn btn-secondary" id="todayBtn" type="button">Today</button>
+            </div>
+          </div>
+        </div>
+
+        <section class="card attendance-toolbar">
+          <div class="summary-chips" id="attendanceSummary" data-testid="attendance-summary">
+            <span class="chip present"><span class="dot"></span> Present <b id="sumPresent">0</b></span>
+            <span class="chip absent"><span class="dot"></span> Absent <b id="sumAbsent">0</b></span>
+            <span class="chip unmarked"><span class="dot"></span> Unmarked <b id="sumUnmarked">0</b></span>
+            <span class="chip"><span class="dot" style="background:var(--primary)"></span> Students <b id="sumStudents">0</b></span>
+          </div>
+          <div class="toolbar-actions">
+            <button class="btn btn-secondary" id="markAllPresent" type="button" data-testid="mark-all-present">
+              <svg class="icon" aria-hidden="true"><use href="/icons.svg#check"></use></svg>
+              Mark all present
+            </button>
+            <button class="btn btn-secondary" id="markAllAbsent" type="button" data-testid="mark-all-absent">
+              <svg class="icon" aria-hidden="true"><use href="/icons.svg#x"></use></svg>
+              Mark all absent
+            </button>
+            <button class="btn btn-primary" id="saveAttendance" type="button" data-testid="save-attendance">
+              <svg class="icon" aria-hidden="true"><use href="/icons.svg#save"></use></svg>
+              Save attendance
+            </button>
+          </div>
+        </section>
+
+        <section class="card attendance-card">
+          <header class="attendance-head">
+            <div>
+              <h3>
+                <svg class="icon" aria-hidden="true"><use href="/icons.svg#clipboard-check"></use></svg>
+                <span id="attendanceDateLabel">Class attendance</span>
+              </h3>
+              <p id="attendanceSubtitle">Loading students and saved records…</p>
+            </div>
+            <div class="legend" aria-label="Attendance legend">
+              <span><i class="p"></i> Present</span>
+              <span><i class="a"></i> Absent</span>
+              <span><i class="u"></i> Not marked</span>
+            </div>
+          </header>
+
+          <div class="table-wrap">
+            <table class="table attendance-table" id="attendanceTable">
+              <thead>
+                <tr>
+                  <th style="width:44px">#</th>
+                  <th>Roll number</th>
+                  <th>Student</th>
+                  <th>Period 1</th>
+                  <th>Period 2</th>
+                  <th>Period 3</th>
+                  <th>Period 4</th>
+                  <th>Period 5</th>
+                  <th>Period 6</th>
+                  <th>Period 7</th>
+                </tr>
+              </thead>
+              <tbody id="attendanceBody">
+                <tr><td colspan="10" class="table-empty"><span class="spinner" style="display:inline-block;vertical-align:middle;margin-right:8px"></span>Loading attendance sheet…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <footer class="attendance-footer">
+            <span class="hint">
+              <svg class="icon" aria-hidden="true"><use href="/icons.svg#clock"></use></svg>
+              Records are stored per student, date and period. Saving again corrects the same row — it never creates a duplicate.
+            </span>
+            <span class="saved-indicator" id="savedIndicator" hidden>
+              <svg class="icon" aria-hidden="true"><use href="/icons.svg#check"></use></svg>
+              <span id="savedIndicatorText">Saved records loaded</span>
+            </span>
+          </footer>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+  <script src="/js/common.js"></script>
+  <script src="/js/attendance.js"></script>
+</body>
+</html>

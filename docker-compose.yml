@@ -1,0 +1,59 @@
+name: student-attendance
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: student-attendance:local
+    container_name: attendance-app
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DB_PATH: /app/data/attendance.db
+      SEED_DEMO: "true"
+    volumes:
+      - attendance-data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    restart: unless-stopped
+
+  jenkins:
+    build:
+      context: ./jenkins
+      dockerfile: Dockerfile
+    image: student-attendance-jenkins:local
+    container_name: attendance-jenkins
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    environment:
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false -Duser.timezone=Asia/Kolkata"
+      JENKINS_OPTS: "--httpPort=8080"
+      CASC_JENKINS_CONFIG: "/usr/share/jenkins/ref/casc/jenkins.yaml"
+      KUBECONFIG: "/var/jenkins_home/.kube/config"
+    volumes:
+      - jenkins-home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/workspace/student-attendance-devops:ro
+      - ${KUBE_CONFIG_DIR:-./.kube}:/var/jenkins_home/.kube:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/login >/dev/null || exit 1"]
+      interval: 20s
+      timeout: 8s
+      start_period: 90s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  attendance-data:
+    name: student-attendance-data
+  jenkins-home:
+    name: student-attendance-jenkins-home

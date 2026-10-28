@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AttendX — a modern student attendance management system with seven daily periods, monthly reports and DevOps automation.">
+  <title>Dashboard · AttendX</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="/" aria-label="AttendX home">
+        <span class="brand-mark">A</span>
+        <span class="brand-text"><strong>AttendX</strong><small>Attendance Suite</small></span>
+      </a>
+
+      <div class="nav-section-label">Workspace</div>
+      <nav class="nav" aria-label="Main navigation">
+        <a class="nav-link" href="/" data-nav="dashboard">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#dashboard"></use></svg>
+          Dashboard
+        </a>
+        <a class="nav-link" href="/students.html" data-nav="students">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#users"></use></svg>
+          Students
+        </a>
+        <a class="nav-link" href="/attendance.html" data-nav="attendance">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#clipboard-check"></use></svg>
+          Daily attendance
+        </a>
+        <a class="nav-link" href="/reports.html" data-nav="reports">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#chart"></use></svg>
+          Reports
+        </a>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+
+      <div class="sidebar-card">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        <div>
+          <strong>DevOps pipeline</strong>
+          <small>Jenkins · Docker · Kubernetes<br>Selenium end-to-end tests</small>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <span>Student Attendance v1.0</span>
+        <span>CI/CD</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Open navigation">
+          <svg class="icon" aria-hidden="true"><use href="/icons.svg#menu"></use></svg>
+        </button>
+        <div class="topbar-title">
+          <h1>Dashboard</h1>
+          <p>A live view of attendance across your classes.</p>
+        </div>
+        <div class="topbar-actions">
+          <span class="date-chip" id="todayChip"></span>
+          <div class="avatar" title="Faculty account">FA</div>
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="hero">
+          <div class="hero-copy">
+            <span class="eyebrow">
+              <svg class="icon" aria-hidden="true"><use href="/icons.svg#sparkles"></use></svg>
+              Academic year 2026–27
+            </span>
+            <h2 id="greeting">Good morning, Faculty</h2>
+            <p>Mark an entire class across seven periods in one view, then let AttendX calculate monthly totals, percentages and at-risk students automatically.</p>
+            <div class="hero-actions">
+              <a class="btn btn-light" href="/attendance.html">
+                <svg class="icon" aria-hidden="true"><use href="/icons.svg#clipboard-check"></use></svg>
+                Take attendance
+              </a>
+              <a class="btn btn-ghost-light" href="/reports.html">
+                <svg class="icon" aria-hidden="true"><use href="/icons.svg#chart"></use></svg>
+                View reports
+              </a>
+            </div>
+          </div>
+          <div class="hero-panel">
+            <div class="hero-ring" id="todayRing" style="--value:0">
+              <span id="todayRingLabel">—</span>
+            </div>
+            <div class="hero-panel-copy">
+              <span>Today's attendance</span>
+              <strong id="todayPercent">—</strong>
+              <small id="todayMeta">Loading today's records…</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="stat-grid" aria-label="Key attendance metrics">
+          <article class="stat-card tone-primary">
+            <div class="stat-top">
+              <span class="stat-label">Total students</span>
+              <span class="stat-icon"><svg class="icon" aria-hidden="true"><use href="/icons.svg#users"></use></svg></span>
+            </div>
+            <div class="stat-value" id="statTotalStudents">—</div>
+            <div class="stat-meta" id="statTotalMeta">Registered in the system</div>
+          </article>
+
+          <article class="stat-card tone-success">
+            <div class="stat-top">
+              <span class="stat-label">Marked today</span>
+              <span class="stat-icon"><svg class="icon" aria-hidden="true"><use href="/icons.svg#user-check"></use></svg></span>
+            </div>
+            <div class="stat-value" id="statToday">—</div>
+            <div class="stat-meta" id="statTodayMeta">No records yet</div>
+          </article>
+
+          <article class="stat-card tone-violet">
+            <div class="stat-top">
+              <span class="stat-label">Monthly average</span>
+              <span class="stat-icon"><svg class="icon" aria-hidden="true"><use href="/icons.svg#chart"></use></svg></span>
+            </div>
+            <div class="stat-value" id="statAverage">—</div>
+            <div class="stat-meta" id="statAverageMeta">Class-wide attendance</div>
+          </article>
+
+          <article class="stat-card tone-danger">
+            <div class="stat-top">
+              <span class="stat-label">Below threshold</span>
+              <span class="stat-icon"><svg class="icon" aria-hidden="true"><use href="/icons.svg#alert-triangle"></use></svg></span>
+            </div>
+            <div class="stat-value" id="statLow">—</div>
+            <div class="stat-meta" id="statLowMeta">At-risk students this month</div>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="card">
+            <header class="card-header">
+              <div>
+                <h3>Today's period pulse</h3>
+                <p>Present vs absent for periods 1–7</p>
+              </div>
+              <a class="card-link" href="/attendance.html">Open sheet <svg class="icon icon-sm" aria-hidden="true"><use href="/icons.svg#arrow-right"></use></svg></a>
+            </header>
+            <div class="period-pulse" id="periodPulse">
+              <div class="loading-state"><span class="spinner"></span> Loading period data…</div>
+            </div>
+          </article>
+
+          <article class="card">
+            <header class="card-header">
+              <div>
+                <h3>Low attendance watchlist</h3>
+                <p>Students below the configured threshold</p>
+              </div>
+              <a class="card-link" href="/reports.html">Reports <svg class="icon icon-sm" aria-hidden="true"><use href="/icons.svg#arrow-right"></use></svg></a>
+            </header>
+            <div class="low-list" id="lowAttendanceList">
+              <div class="loading-state"><span class="spinner"></span> Checking attendance…</div>
+            </div>
+          </article>
+        </section>
+
+        <section class="card recent-card">
+          <header class="card-header">
+            <div>
+              <h3>Recent attendance</h3>
+              <p>The latest days with saved records</p>
+            </div>
+            <a class="card-link" href="/reports.html#history">View all <svg class="icon icon-sm" aria-hidden="true"><use href="/icons.svg#arrow-right"></use></svg></a>
+          </header>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Students</th>
+                  <th>Periods marked</th>
+                  <th>Present</th>
+                  <th>Attendance</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="recentBody">
+                <tr><td colspan="7" class="table-empty"><span class="spinner" style="display:inline-block;vertical-align:middle;margin-right:8px"></span>Loading recent records…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>
