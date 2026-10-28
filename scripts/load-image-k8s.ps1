@@ -20,34 +20,49 @@ if ($LASTEXITCODE -ne 0) {
   throw "Image '$Image' not found locally. Build it first: docker build -t $Image ."
 }
 
-$candidates = docker ps -a --format '{{.Names}} {{.Image}}' |
-  Where-Object { $_ -match 'desktop-control-plane|k8s-control-plane|kind-control-plane|kindest/node' }
+# Docker Desktop hides Kubernetes system containers from `docker ps` unless
+# "Show system containers" is enabled, but `docker inspect` still resolves the
+# well-known kind node names. Probe both sources.
+$candidates = @(
+  docker ps -a --format '{{.Names}}' |
+    Where-Object { $_ -match 'desktop-control-plane|k8s-control-plane|kind-control-plane' }
+) + @('desktop-control-plane', 'k8s-control-plane', 'kind-control-plane')
 
-if (-not $candidates) {
+$node = $null
+foreach ($candidate in ($candidates | Select-Object -Unique)) {
+  docker inspect $candidate *> $null
+  if ($LASTEXITCODE -eq 0) {
+    $node = $candidate
+    break
+  }
+}
+
+if (-not $node) {
   throw @'
 No Kubernetes control-plane container found.
-Make sure Kubernetes is enabled in Docker Desktop and "Show system containers" is on.
+Make sure Kubernetes is enabled in Docker Desktop.
 If your cluster is not Docker Desktop Kubernetes, push the image to a registry
 that the cluster can reach instead.
 '@
 }
-
-$node = ($candidates | Select-Object -First 1).Split(' ')[0]
 $safeName = $Image -replace '[/:]', '-'
 $tar = Join-Path $env:TEMP "$safeName.tar"
 
 Write-Host "Saving $Image ..." -ForegroundColor Cyan
 docker save $Image -o $tar
-if ($LASTEXITCODE -ne 0) { throw 'docker save failed.' }
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path $tar)) { throw 'docker save failed.' }
 
 try {
-  Write-Host "Copying image archive to $node ..." -ForegroundColor Cyan
-  docker cp $tar "${node}:/tmp/$safeName.tar"
-  if ($LASTEXITCODE -ne 0) { throw 'docker cp failed.' }
+  # docker cp silently no-ops into Docker Desktop's hidden kind node, so
+  # stream the archive through docker exec stdin instead.
+  Write-Host "Streaming image archive to $node ..." -ForegroundColor Cyan
+  cmd /c "type ""$tar"" | docker exec -i $node sh -c ""cat > /tmp/$safeName.tar"""
+  if ($LASTEXITCODE -ne 0) { throw 'Streaming the image archive failed.' }
 
   Write-Host 'Importing into the k8s.io containerd namespace ...' -ForegroundColor Cyan
   docker exec $node ctr -n k8s.io images import "/tmp/$safeName.tar"
   if ($LASTEXITCODE -ne 0) { throw 'ctr images import failed.' }
+  docker exec $node rm -f "/tmp/$safeName.tar" *> $null
 
   # Keep the :latest tag in sync for manifests that use it.
   if ($Image -match ':latest$') {

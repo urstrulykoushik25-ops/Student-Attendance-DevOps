@@ -14,6 +14,19 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Keep the Jenkins-side kubeconfig in sync with Docker Desktop's current API
+# port. This is optional: builds still run (and skip the K8s stage) when
+# Kubernetes is not enabled.
+$syncScript = Join-Path $PSScriptRoot 'sync-kubeconfig.ps1'
+if (Test-Path $syncScript) {
+  try {
+    & $syncScript | Out-Null
+  } catch {
+    Write-Host "Kubernetes kubeconfig not synced: $($_.Exception.Message)" -ForegroundColor Yellow
+  }
+}
+
 $BaseUrl = $BaseUrl.TrimEnd('/')
 $pair = "${User}:${Password}"
 $auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($pair))

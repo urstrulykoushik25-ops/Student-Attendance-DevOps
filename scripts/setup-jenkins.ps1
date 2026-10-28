@@ -27,15 +27,18 @@ if ($LASTEXITCODE -ne 0) {
   throw 'Docker is not running. Start Docker Desktop and try again.'
 }
 
-# Make the host kubeconfig available to Jenkins when it exists. This lets the
-# optional Kubernetes stage run without hard-coding a Windows user path.
-if (-not $env:KUBE_CONFIG_DIR) {
-  $hostKube = Join-Path $HOME '.kube'
-  if (Test-Path (Join-Path $hostKube 'config')) {
-    $env:KUBE_CONFIG_DIR = (Resolve-Path $hostKube).Path.Replace('\', '/')
-    Write-Host "Using kubeconfig from $env:KUBE_CONFIG_DIR"
-  } else {
-    New-Item -ItemType Directory -Path (Join-Path $projectRoot '.kube') -Force | Out-Null
+# Jenkins cannot use the host kubeconfig directly: Docker Desktop publishes the
+# API on 127.0.0.1:<random port>, which is unreachable from the container. Create
+# a rewritten copy in ./.kube and mount that instead.
+$env:KUBE_CONFIG_DIR = (Join-Path $projectRoot '.kube')
+New-Item -ItemType Directory -Path $env:KUBE_CONFIG_DIR -Force | Out-Null
+$hostKube = Join-Path $HOME '.kube\config'
+$syncScript = Join-Path $PSScriptRoot 'sync-kubeconfig.ps1'
+if ((Test-Path $hostKube) -and (Test-Path $syncScript)) {
+  try {
+    & $syncScript
+  } catch {
+    Write-Host "Kubernetes kubeconfig not prepared: $($_.Exception.Message)" -ForegroundColor Yellow
   }
 }
 

@@ -20,7 +20,7 @@ they differ.
 | AttendX (Compose) | <http://localhost:3000> | Application |
 | Jenkins | <http://localhost:8080> | CI/CD server (`admin` / `admin123`) |
 | Jenkins job | `student-attendance-pipeline` | Build → test → containerize → deploy |
-| AttendX (Kubernetes) | <http://localhost:30080> | App running in a pod with a PVC |
+| AttendX (Kubernetes) | <http://localhost:30080> | App in a pod with a PVC (via port-forward on Docker Desktop) |
 | Selenium | ephemeral container per build | Real Chrome E2E tests |
 
 Recommended machine: 4 CPU cores, 8 GB RAM, 20 GB free disk. Docker Desktop should have at least
@@ -388,9 +388,10 @@ waits for the cluster:
 .\scripts\enable-k8s.ps1
 ```
 
-The script sets `kubernetes.enabled=true`, `kubernetes.mode=kind`, one node and
-`kubernetes.showSystemContainers=true` (needed so the control-plane container is visible to the
-image-import helper). It backs up the original settings file to `settings-store.json.bak`.
+The script sets `KubernetesEnabled=true`, `KubernetesMode=kind` and one node in Docker Desktop's
+settings store. Recent Docker Desktop versions use these Go field names; the dotted GUI keys
+(`kubernetes.enabled`) are reported as unknown and ignored. The script backs up the original
+settings file to `settings-store.json.bak`.
 
 Verify:
 
@@ -419,25 +420,31 @@ is **not** automatically visible inside the cluster. Load it explicitly with the
 .\scripts\load-image-k8s.ps1 -Image student-attendance:latest
 ```
 
-The script saves the image, copies the archive into the control-plane container and imports it into
-the `k8s.io` containerd namespace. The manual equivalent is:
+The script saves the image, streams the archive into the control-plane container over stdin and
+imports it into the `k8s.io` containerd namespace. The manual equivalent is:
 
 ```powershell
-# Find the Kubernetes node container
-$node = docker ps --filter "name=desktop-control-plane" --format "{{.Names}}" | Select-Object -First 1
-if (-not $node) { throw "Kubernetes node container not found. Is Kubernetes enabled?" }
+# Docker Desktop hides system containers from docker ps, but the name resolves
+$node = "desktop-control-plane"
+docker inspect $node *> $null
+if ($LASTEXITCODE -ne 0) { throw "Kubernetes node container not found. Is Kubernetes enabled?" }
 
-# Save, copy and import the image
+# Save, stream and import the image
 docker save student-attendance:latest -o "$env:TEMP\student-attendance.tar"
-docker cp "$env:TEMP\student-attendance.tar" "${node}:/tmp/student-attendance.tar"
+cmd /c "type ""$env:TEMP\student-attendance.tar"" | docker exec -i $node sh -c ""cat > /tmp/student-attendance.tar"""
 docker exec $node ctr -n k8s.io images import /tmp/student-attendance.tar
 docker exec $node ctr -n k8s.io images ls | Select-String student-attendance
 ```
 
+> `docker cp` currently returns success but does not copy files into Docker Desktop's hidden kind
+> node. Streaming through `docker exec -i` is reliable. The helper script and the Jenkins pipeline
+> both use this method.
+
 If your Docker Desktop version names the node differently, list candidates:
 
 ```powershell
-docker ps --format "table {{.Names}}\t{{.Image}}"
+docker ps -a --format "table {{.Names}}\t{{.Image}}"
+docker inspect desktop-control-plane k8s-control-plane kind-control-plane
 ```
 
 Look for a container running a `kindest/node` image.
@@ -459,7 +466,17 @@ kubectl -n student-attendance rollout status deployment/attendance-app --timeout
 kubectl -n student-attendance get pods,svc,pvc
 ```
 
-Open <http://localhost:30080>.
+Docker Desktop's kind-based cluster does **not** publish NodePorts to Windows in current versions.
+Keep a port-forward running to reach the app at the documented URL:
+
+```powershell
+.\scripts\port-forward-k8s.ps1
+# http://localhost:30080
+```
+
+On kind/minikube clusters configured with extra port mappings, the NodePort is reachable directly.
+Inside the cluster the Service always works:
+`http://attendance-app.student-attendance.svc.cluster.local`.
 
 ### 6.5 Inspect and operate
 
@@ -483,7 +500,7 @@ kubectl -n student-attendance rollout restart deployment/attendance-app
 
 ### 6.6 How Jenkins deploys to Kubernetes
 
-`docker-compose.yml` mounts the host kubeconfig directory:
+`docker-compose.yml` mounts the project's generated kubeconfig directory:
 
 ```yaml
 - ${KUBE_CONFIG_DIR:-./.kube}:/var/jenkins_home/.kube:ro
@@ -495,9 +512,17 @@ and sets:
 KUBECONFIG: "/var/jenkins_home/.kube/config"
 ```
 
-`scripts/setup-jenkins.ps1` automatically sets `KUBE_CONFIG_DIR` to `$HOME\.kube` when a config
-exists. The Jenkins pipeline checks `kubectl version --request-timeout=5s`; if the cluster is
-reachable, it applies the manifests, runs:
+The host kubeconfig cannot be mounted directly: Docker Desktop publishes the API at
+`https://127.0.0.1:<random-port>`, which points at the Jenkins container itself. Run
+`scripts/sync-kubeconfig.ps1` (or `setup-jenkins.ps1`, which calls it) to write `./.kube/config`
+with:
+
+- server `https://host.docker.internal:<port>`
+- `tls-server-name: kubernetes` so the Docker Desktop certificate verifies
+
+Re-run the sync after every Docker Desktop restart because the published port changes. The Jenkins
+pipeline checks `kubectl version --request-timeout=5s`; if the cluster is reachable, it applies the
+manifests, runs:
 
 ```bash
 kubectl -n student-attendance set image deployment/attendance-app \
@@ -505,10 +530,10 @@ kubectl -n student-attendance set image deployment/attendance-app \
 kubectl -n student-attendance rollout status deployment/attendance-app --timeout=180s
 ```
 
-The pipeline automatically detects a kind/desktop-control-plane container and imports the build
-tag into its `k8s.io` containerd namespace before running `kubectl set image`. If your Docker
-Desktop version hides system containers, enable **Show system containers** or import the image
-manually:
+The pipeline probes the well-known node names with `docker inspect` (Docker Desktop hides system
+containers from `docker ps`), streams the build image into the node and imports it into the
+`k8s.io` containerd namespace before running `kubectl set image`. After the rollout it runs an
+in-cluster health check through the Service. If you prefer to import manually:
 
 ```powershell
 $tag = "<build-number>"
@@ -527,7 +552,7 @@ registry-qualified name.
 | Pod `Pending`, PVC unbound | Check `kubectl -n student-attendance describe pvc attendance-data`; Docker Desktop provides a default StorageClass |
 | `rollout status` times out | `kubectl -n student-attendance describe pod ...`, check probes and logs |
 | Port 30080 already in use | Change `nodePort` in `k8s/service.yaml` and redeploy |
-| Data lost after redeploy | The PVC is kept by `kubectl delete -k k8s/`? PVCs are namespaced resources and are deleted by `delete -k`; back up first or remove the PVC from the kustomization for production |
+| Data lost after redeploy | `kubectl delete -k k8s/` deletes the namespace and PVC. Back up first, or delete only the Deployment/Service to keep data |
 
 ### 6.8 Clean up Kubernetes
 
