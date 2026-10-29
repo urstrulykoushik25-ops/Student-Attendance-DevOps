@@ -108,6 +108,18 @@ describe('Selenium end-to-end attendance tests', () => {
     }
   }
 
+  async function assertRowStatus(student, expected) {
+    for (let period = 1; period <= 7; period += 1) {
+      const cell = driver.findElement(By.css(`[data-testid="cell-${student.id}-${period}"]`));
+      assert.equal(
+        await cell.getAttribute('data-status'),
+        expected,
+        `${student.rollNo} period ${period} should be ${expected}`
+      );
+      assert.equal((await cell.getText()).trim(), expected === 'present' ? 'P' : 'A');
+    }
+  }
+
   it('1. displays all registered students on the attendance page', { timeout: 120000 }, async () => {
     await goto('/attendance.html?date=2024-02-15');
     const rows = await waitForRows('[data-testid="attendance-row"]');
@@ -124,13 +136,19 @@ describe('Selenium end-to-end attendance tests', () => {
     await goto('/attendance.html?date=2024-02-15');
     await findRow(students[0].rollNo);
 
-    for (let period = 1; period <= 7; period += 1) {
-      const cell = driver.findElement(By.css(`[data-testid="cell-${students[0].id}-${period}"]`));
-      const status = await cell.getAttribute('data-status');
-      if (status !== 'present') await click(cell);
-      assert.equal(await cell.getAttribute('data-status'), 'present');
-      assert.equal((await cell.getText()).trim(), 'P');
-    }
+    // Mark All Present must fill every period for every student.
+    await click(await driver.findElement(By.css('[data-testid="mark-all-present"]')));
+    await assertRowStatus(students[0], 'present');
+    await assertRowStatus(students[1], 'present');
+
+    // Mark All Absent must overwrite the sheet.
+    await click(await driver.findElement(By.css('[data-testid="mark-all-absent"]')));
+    await assertRowStatus(students[0], 'absent');
+    await assertRowStatus(students[1], 'absent');
+
+    // Leave the sheet present before saving.
+    await click(await driver.findElement(By.css('[data-testid="mark-all-present"]')));
+    await assertRowStatus(students[0], 'present');
 
     await click(await driver.findElement(By.css('[data-testid="save-attendance"]')));
     await driver.wait(until.elementLocated(By.css('.toast.success')), 20000);

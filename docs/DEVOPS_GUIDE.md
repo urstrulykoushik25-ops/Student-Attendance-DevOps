@@ -674,7 +674,7 @@ npm run test:selenium
 | # | Scenario | Steps | Expected result |
 | --- | --- | --- | --- |
 | 1 | Attendance page lists the class | Open `/attendance.html?date=2024-02-15` | Every registered student appears with roll number and name; seven period columns are visible |
-| 2 | Mark all seven periods | Click each period cell for a student until it shows `P`, then Save | Toast confirms save; API returns seven `present` values for that student/date |
+| 2 | Mark all seven periods + Mark All | Click **Mark All Present**, verify every cell shows `P`; click **Mark All Absent**, verify every cell shows `A`; click **Mark All Present** again, then Save | Both bulk actions update all seven periods for all students; toast confirms save; API returns seven `present` values for that student/date |
 | 3 | Reload saved attendance | Reopen the same date | Cells still show `P` and the `is-present` style |
 | 4 | Missing/duplicate student validation | Open Add Student, submit empty; then submit an existing roll number | Inline "Roll number is required"; then "already exists" (HTTP 409) |
 | 5 | Duplicate attendance prevention | POST the same 7 records twice for a unique date | Both saves return `saved: 7`; `recordCount` stays 7; no duplicate rows |

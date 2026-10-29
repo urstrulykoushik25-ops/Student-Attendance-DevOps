@@ -217,7 +217,7 @@ is deterministic in CI (it restarts the Node process and verifies the SQLite fil
 | # | Test case | Implementation |
 | --- | --- | --- |
 | 1 | Display all registered students on the attendance page | `1. displays all registered students...` |
-| 2 | Mark all seven periods and save attendance | `2. marks attendance for all seven periods...` |
+| 2 | Mark all seven periods and save attendance | `2. marks attendance for all seven periods...` (also asserts Mark All Present/Absent) |
 | 3 | Reload saved attendance for the selected date | `3. reloads saved attendance...` |
 | 4 | Validate missing and duplicate student information | `4. handles missing and duplicate student information` |
 | 5 | Prevent duplicate attendance entries | `5. prevents duplicate attendance entries` |
