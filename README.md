@@ -173,6 +173,19 @@ The pipeline runs these stages:
 Jenkins is a demo installation: it runs as `root` so it can access
 `/var/run/docker.sock`. See the security notes before exposing it.
 
+## Publish to GitHub
+
+The repository is initialized on `main`. Add your GitHub remote and push when you are ready:
+
+```powershell
+git remote add origin https://github.com/<your-account>/student-attendance-devops.git
+git push -u origin main
+```
+
+No remote or GitHub token is configured in this environment. To make Jenkins build from GitHub
+instead of the mounted local path, change the job's SCM URL in `jenkins/casc/jenkins.yaml` (or the
+Jenkins UI) to the repository URL and add credentials if the repository is private.
+
 ## Kubernetes deployment
 
 Enable **Settings → Kubernetes → Enable Kubernetes** in Docker Desktop, wait for the cluster to
@@ -300,8 +313,8 @@ Validated end to end on Windows 11 with Docker Desktop 4.97.0 and Kubernetes 1.3
 | Docker Compose stack | `attendance-app` and `attendance-jenkins` both healthy |
 | API suite | 13/13 tests passed |
 | Selenium UI suite | 9/9 tests passed against standalone Chrome |
-| Jenkins pipeline | build #3 `SUCCESS` (checkout, API, image build, Selenium, Kubernetes) |
-| Kubernetes rollout | `student-attendance:3`, pod `1/1 Running` |
+| Jenkins pipeline | build #4 `SUCCESS` (checkout, API, image build, Selenium incl. Mark All, Kubernetes) |
+| Kubernetes rollout | `student-attendance:4`, pod `1/1 Running` |
 | In-cluster Service smoke test | `{"status":"ok","service":"student-attendance","database":"ok"}` |
 | PVC | `attendance-data` `Bound`, 1 Gi |
 | Data persistence | test student survived pod replacement; test record removed afterward |

@@ -12,7 +12,8 @@ data/
 .env
 .env.*
 !.env.example
-.kube/
+.kube/*
+!.kube/.gitkeep
 *.kubeconfig
 
 # Test and build output
